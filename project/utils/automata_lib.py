@@ -6,7 +6,7 @@ from pyformlang.finite_automaton import (
     DeterministicFiniteAutomaton,
     NondeterministicFiniteAutomaton,
 )
-from pyformlang.finite_automaton import State, Symbol, Epsilon
+from pyformlang.finite_automaton import State, Symbol
 
 
 def create_minimum_dfa(regex: Regex) -> DeterministicFiniteAutomaton:
