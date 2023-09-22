@@ -6,7 +6,7 @@ from project.utils.graph_lib import *
 
 def assert_creation(path):
     first_count_nodes, second_count_nodes, labels = 5, 5, ("some", "none")
-    create_two_cycle_graph(first_count_nodes, second_count_nodes, labels, path)
+    create_two_cycle_graph_and_save(first_count_nodes, second_count_nodes, labels, path)
     graph = cfpq_data.labeled_two_cycles_graph(
         first_count_nodes, second_count_nodes, labels=labels
     )
@@ -54,9 +54,9 @@ class TestsForGetGraphByName:
             "publisher",
             "format",
         }
-        assert get_graph_by_name(name) == (nodes, edges, labels)
+        assert get_info_graph(name) == (nodes, edges, labels)
 
     def test_with_incorrect_graph(self):
         name = "ic heart"
         with pytest.raises(FileNotFoundError):
-            get_graph_by_name(name)
+            get_info_graph(name)
