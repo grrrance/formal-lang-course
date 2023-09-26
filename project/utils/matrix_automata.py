@@ -3,6 +3,29 @@ from scipy.sparse import dok_matrix, kron
 
 
 class MatrixAutomata:
+    """
+    Representation of FA as a Boolean Matrix
+
+    Attributes
+    ----------
+    start_states: set
+    Start states of FA
+
+    final_states: set
+    Final states of FA
+
+    adjacency_matrices: dict
+    Dictionary of boolean matrices.
+    Keys are FA labels
+
+    indexes: dict
+    Dictionary of correspondence of states and indices in matrices.
+    Keys are states
+
+    count_states: int
+    Number of states
+    """
+
     def __init__(self):
         self.start_states = set()
         self.final_states = set()
@@ -14,6 +37,19 @@ class MatrixAutomata:
     def create_matrix_from_fa(
         cls, nfa: NondeterministicFiniteAutomaton
     ) -> "MatrixAutomata":
+        """
+        Transforms FA into MatrixAutomata
+
+        Parameters
+        ----------
+        nfa: NondeterministicFiniteAutomaton
+        NFA to transform
+
+        Returns
+        -------
+        obj: MatrixAutomata
+        MatrixAutomata object from NFA
+        """
         obj = cls()
         obj.start_states = nfa.start_states
         obj.final_states = nfa.final_states
@@ -41,6 +77,14 @@ class MatrixAutomata:
         return obj
 
     def create_fa_from_matrix(self) -> NondeterministicFiniteAutomaton:
+        """
+        Transforms MatrixAutomata into NFA
+
+        Returns
+        -------
+        nfa: NondeterministicFiniteAutomaton
+        A non-deterministic automaton
+        """
         nfa = NondeterministicFiniteAutomaton()
 
         states = {i: state for state, i in self.indexes.items()}
@@ -65,10 +109,24 @@ class MatrixAutomata:
         return nfa
 
     def intersect(self, other_matrix: "MatrixAutomata") -> "MatrixAutomata":
+        """
+        Computes intersection of self boolean matrix with other
+
+        Parameters
+        ----------
+        other_matrix: MatrixAutomata
+        Other boolean matrix
+
+        Returns
+        -------
+        intersection: MatrixAutomata
+        Intersection of two boolean matrices
+        """
         intersection = MatrixAutomata()
         symbols = (
             self.adjacency_matrices.keys() & other_matrix.adjacency_matrices.keys()
         )
+
         intersection.count_states = self.count_states * other_matrix.count_states
         for symbol in symbols:
             intersection.adjacency_matrices[symbol] = kron(
@@ -95,6 +153,14 @@ class MatrixAutomata:
         return intersection
 
     def transitive_closure(self) -> dok_matrix:
+        """
+        Computes transitive closure of boolean matrices
+
+        Returns
+        -------
+        tc: dok_matrix
+        Transitive closure of boolean matrices
+        """
         if len(self.adjacency_matrices) == 0:
             return dok_matrix((0, 0), dtype=bool)
 
