@@ -1,15 +1,10 @@
-import os
-
 import pytest
 
 from project.utils.cfg import read_cfg_from_file
 from project.utils.cfg import create_wcnf_from_cfg
 from pyformlang.cfg import Variable, Production, Terminal
 
-
-def get_path_to_test_case():
-    directory = os.path.join("tests", "test_cases")
-    return os.path.join(directory, "cfg_test.txt")
+from tests.test_cases.tests_utils import get_path_to_test_case
 
 
 class TestsForReadingCFG:
@@ -29,7 +24,7 @@ class TestsForReadingCFG:
             read_cfg_from_file("somepath")
 
     def test_for_correct_path(self):
-        cfg = read_cfg_from_file(get_path_to_test_case())
+        cfg = read_cfg_from_file(get_path_to_test_case("cfg_test.txt"))
         assert cfg.start_symbol == Variable("S")
         for i in self.prods:
             assert i in cfg.productions
@@ -37,7 +32,7 @@ class TestsForReadingCFG:
 
 class TestsForCreationWCNF:
     def test_weakness_cnf(self):
-        cfg = read_cfg_from_file(get_path_to_test_case())
+        cfg = read_cfg_from_file(get_path_to_test_case("cfg_test.txt"))
         cfg = create_wcnf_from_cfg(cfg)
         assert not cfg.is_empty()
         assert Variable("A") not in cfg.variables
