@@ -19,7 +19,7 @@ class TestsForCFPQ:
         cfg = get_path_to_test_case("cfpq_test.txt")
         res = cfpq(cfg, graph, {0}, {4})
 
-        assert res == set()
+        assert res == {(0, 4)}
 
     def test_cfpq_empty(self):
         graph = self.create_graph({(0, "a", 1), (1, "a", 2), (2, "b", 3), (3, "b", 4)})
