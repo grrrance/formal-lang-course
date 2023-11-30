@@ -3,10 +3,15 @@ from enum import Enum
 from typing import AbstractSet
 from networkx import MultiDiGraph
 from pyformlang.cfg import CFG, Variable, Terminal, Production
-from scipy.sparse import lil_matrix
+from pyformlang.finite_automaton import EpsilonNFA
+from scipy import sparse
+from scipy.sparse import lil_matrix, dok_matrix
 
 from project.utils.cfg import create_wcnf_from_cfg, read_cfg_from_file
 from project.utils.graph_lib import get_graph_by_name
+from project.utils.ecfg import ECFG
+from project.utils.rsm import RSM
+from project.utils.matrix_automata import MatrixAutomata
 
 
 def _convert_wcnf_prods(prods: AbstractSet[Production]) -> (set, dict, dict):
@@ -143,6 +148,74 @@ def matrix_closure(wcnf: CFG, graph: MultiDiGraph) -> set:
     )
 
 
+def tensor_closure(cfg: CFG, graph: MultiDiGraph) -> set:
+    """
+    Using the Tensor algorithm, determines the reachability between all pairs of vertices for a given graph and a
+    given context-free grammar
+
+    Parameters
+    ----------
+    cfg: CFG
+    Context-free grammar
+
+    graph: MultiDiGraph
+    A directed graph class
+
+    Returns
+    -------
+    result: set
+    Result is set of triples of the form (vertex, non-terminal, vertex)
+    """
+    ecfg = ECFG.from_cfg(cfg)
+    rsm = RSM.from_ecfg(ecfg).minimize()
+    rsm_mat = MatrixAutomata.create_matrix_from_rsm(rsm)
+    rsm_states = {i: state for state, i in rsm_mat.indexes.items()}
+
+    graph_mat = MatrixAutomata.create_matrix_from_fa(EpsilonNFA.from_networkx(graph))
+    n = graph_mat.count_states
+    graph_states = {i: st for st, i in graph_mat.indexes.items()}
+
+    id_mat = sparse.eye(n, dtype=bool).todok()
+    for var in cfg.get_nullable_symbols():
+        if var.value not in graph_mat.adjacency_matrices:
+            graph_mat.adjacency_matrices[var.value] = dok_matrix((n, n), dtype=bool)
+        graph_mat.adjacency_matrices[var.value] += id_mat
+
+    prev_nnz = 0
+
+    while True:
+        tc_nnz_indexes = list(
+            zip(*rsm_mat.intersect(graph_mat).transitive_closure().nonzero())
+        )
+        if len(tc_nnz_indexes) == prev_nnz:
+            break
+
+        prev_nnz = len(tc_nnz_indexes)
+
+        for i, j in tc_nnz_indexes:
+            cfg_i, cfg_j = i // n, j // n
+            graph_i, graph_j = i % n, j % n
+
+            state_source = rsm_states[cfg_i]
+            state_target = rsm_states[cfg_j]
+
+            var, _ = state_source.value
+
+            if (
+                state_source in rsm_mat.start_states
+                and state_target in rsm_mat.final_states
+            ):
+                if var not in graph_mat.adjacency_matrices:
+                    graph_mat.adjacency_matrices[var] = dok_matrix((n, n), dtype=bool)
+                graph_mat.adjacency_matrices[var][graph_i, graph_j] = True
+
+    return {
+        (graph_states[graph_i], var, graph_states[graph_j])
+        for var, mat in graph_mat.adjacency_matrices.items()
+        for graph_i, graph_j in zip(*mat.nonzero())
+    }
+
+
 class CFPQAlgorithm(Enum):
     """
     Class that represents an enumeration of algorithms that solves the CFPQ problem
@@ -154,10 +227,14 @@ class CFPQAlgorithm(Enum):
 
     MATRIX : CFPQAlgorithm
     Matrix algorithm
+
+    TENSOR: CFPQAlgorithm
+    Tensor algorithm
     """
 
     HELLINGS = hellings_closure
     MATRIX = matrix_closure
+    TENSOR = tensor_closure
 
 
 def cfpq(

@@ -7,7 +7,7 @@ from tests.test_cases.tests_utils import get_path_to_test_case
 
 
 class TestsForCFPQ:
-    algorithms = [CFPQAlgorithm.MATRIX, CFPQAlgorithm.HELLINGS]
+    algorithms = [CFPQAlgorithm.MATRIX, CFPQAlgorithm.HELLINGS, CFPQAlgorithm.TENSOR]
 
     @staticmethod
     def create_graph(edges: set) -> MultiDiGraph:
