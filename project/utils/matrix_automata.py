@@ -1,6 +1,8 @@
+from collections import defaultdict
 from typing import List, Dict
 
 from pyformlang.finite_automaton import NondeterministicFiniteAutomaton, State
+from scipy import sparse
 from scipy.sparse import (
     dok_matrix,
     kron,
@@ -10,6 +12,8 @@ from scipy.sparse import (
     csr_matrix,
     vstack,
 )
+
+from project.utils.rsm import RSM
 
 
 class MatrixAutomata:
@@ -81,6 +85,60 @@ class MatrixAutomata:
                     matrices[symbol][
                         obj.indexes[state_source], obj.indexes[state_target]
                     ] = True
+
+        obj.adjacency_matrices = matrices
+
+        return obj
+
+    @classmethod
+    def create_matrix_from_rsm(cls, rsm: RSM) -> "MatrixAutomata":
+        """
+        Transforms RSM into MatrixAutomata
+
+        Parameters
+        ----------
+        rsm: RSM
+        Recursive state machine to transform
+
+        Returns
+        -------
+        obj: MatrixAutomata
+        Representation of a MatrixAutomata class object from NFA
+        """
+        obj = cls()
+        states, start_states, final_states = set(), set(), set()
+
+        for var, automata in rsm.boxes.items():
+            for state in automata.states:
+                st = State((var, state.value))
+                states.add(st)
+                if state in automata.start_states:
+                    start_states.add(st)
+                if state in automata.final_states:
+                    final_states.add(st)
+
+        obj.start_states = start_states
+        obj.final_states = final_states
+        obj.count_states = len(states)
+        indexes = {
+            state: i for i, state in enumerate(sorted(states, key=lambda s: s.value[1]))
+        }
+        obj.indexes = indexes
+
+        matrices = defaultdict(
+            lambda: sparse.dok_matrix((obj.count_states, obj.count_states), dtype=bool)
+        )
+
+        for var, automata in rsm.boxes.items():
+            for state_source, transition in automata.to_dict().items():
+                for symbol, states_target in transition.items():
+                    if not isinstance(states_target, set):
+                        states_target = {states_target}
+                    for state_target in states_target:
+                        matrices[symbol.value][
+                            indexes[State((var, state_source.value))],
+                            indexes[State((var, state_target.value))],
+                        ] = True
 
         obj.adjacency_matrices = matrices
 
