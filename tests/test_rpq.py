@@ -2,7 +2,7 @@ from networkx import MultiDiGraph
 from project.utils.rpq import tensors_rpq
 from project.utils.rpq import bfs_rpq
 from pyformlang.regular_expression import Regex
-from project.experiments.cuda_rpq import cubool_tensors_rpq
+
 
 class TestsForTensorsRpq:
     graph = MultiDiGraph()
@@ -18,15 +18,12 @@ class TestsForTensorsRpq:
     def test_works_as_expected(self):
         regex = Regex("C.A.T.S")
         assert tensors_rpq(regex, self.graph, {0}, {4}) == {(0, 4)}
-        assert cubool_tensors_rpq(regex, self.graph, {0}, {4}) == {(0, 4)}
 
     def test_empty_graph(self):
         assert tensors_rpq(Regex("Put your text here"), MultiDiGraph()) == set()
-        assert cubool_tensors_rpq(Regex("Put your text here"), MultiDiGraph()) == set()
 
     def test_empty_regex(self):
         assert tensors_rpq(Regex(""), self.graph) == set()
-        assert cubool_tensors_rpq(Regex(""), self.graph) == set()
 
 
 class TestsForBfsRpq:
