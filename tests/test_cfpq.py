@@ -4,10 +4,12 @@ from pyformlang.cfg import CFG, Variable
 from project.utils.cfpq import cfpq
 from project.utils.cfpq import CFPQAlgorithm
 from tests.test_cases.tests_utils import get_path_to_test_case
-
+from project.utils.cfpq import CFPQAlgorithm as CUDACFPQAlgorithm
+from project.utils.cfpq import cfpq as cuda_cfpq
 
 class TestsForCFPQ:
     algorithms = [CFPQAlgorithm.MATRIX, CFPQAlgorithm.HELLINGS, CFPQAlgorithm.TENSOR]
+    cuda_algorithms = [CUDACFPQAlgorithm.MATRIX, CUDACFPQAlgorithm.HELLINGS, CUDACFPQAlgorithm.TENSOR]
 
     @staticmethod
     def create_graph(edges: set) -> MultiDiGraph:
@@ -28,6 +30,10 @@ class TestsForCFPQ:
     ):
         for algo in TestsForCFPQ.algorithms:
             res = cfpq(cfg, graph, start_nodes, final_nodes, start_symbol, algo)
+            assert res == expected_result
+
+        for algo in TestsForCFPQ.cuda_algorithms:
+            res = cuda_cfpq(cfg, graph, start_nodes, final_nodes, start_symbol, algo)
             assert res == expected_result
 
     def test_cfpq_not_empty(self):
